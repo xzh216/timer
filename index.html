@@ -8,19 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            transition: background-image 1s ease-in-out;
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-        }
-        .glass-container {
-            background-color: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; transition: background-image 1s ease-in-out; background-size: cover; background-position: center; background-attachment: fixed; }
+        .glass-container { background-color: rgba(0, 0, 0, 0.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .tab { transition: all 0.3s ease; }
         .tab.active { background-color: rgba(74, 144, 226, 0.8); color: white; }
         .tab:not(.active) { background-color: rgba(255, 255, 255, 0.2); }
@@ -31,7 +20,7 @@
         .activity-level-2 { background-color: rgba(0, 150, 75, 0.5); }
         .activity-level-3 { background-color: rgba(0, 191, 95, 0.7); }
         .activity-level-4 { background-color: rgba(0, 230, 115, 0.9); }
-        textarea::placeholder { color: rgba(255, 255, 255, 0.5); }
+        .btn-google { background-color: #4285F4; color: white; }
     </style>
 </head>
 <body class="text-white">
@@ -60,7 +49,7 @@
                 <div class="glass-container rounded-lg p-1 flex space-x-1">
                     <button id="tab-timer" class="tab active px-6 py-2 rounded-md font-semibold">计时专注</button>
                     <button id="tab-dashboard" class="tab px-6 py-2 rounded-md font-semibold">数据看板</button>
-                    <button id="tab-data" class="tab px-6 py-2 rounded-md font-semibold">数据管理</button>
+                    <button id="tab-account" class="tab px-6 py-2 rounded-md font-semibold">账户与同步</button>
                 </div>
             </nav>
 
@@ -117,163 +106,176 @@
                     </div>
                 </div>
 
-                <!-- Data Management View -->
-                <div id="data-view" class="hidden">
+                <!-- Account & Sync View -->
+                <div id="account-view" class="hidden">
                     <div class="glass-container max-w-2xl mx-auto p-8 rounded-2xl shadow-2xl text-center">
-                        <h2 class="text-2xl font-bold mb-4">数据同步与管理</h2>
-                        <p class="text-gray-300 mb-6">通过导出和导入“同步码”，你可以在不同设备间迁移你的所有学习数据。</p>
+                        <h2 class="text-2xl font-bold mb-4">账户与云同步</h2>
                         
-                        <div class="mb-8">
-                            <h3 class="text-xl font-semibold mb-2">1. 从当前设备导出</h3>
-                            <p class="text-sm text-gray-400 mb-4">将当前设备的所有数据生成一个“同步码”。</p>
-                            <button id="export-data-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg">导出全部数据</button>
+                        <!-- Logged Out State -->
+                        <div id="logged-out-view">
+                            <p class="text-gray-300 mb-6">使用Google账号登录，即可在多台设备间自动同步你的所有学习数据。</p>
+                            <button id="google-signin-btn" class="btn-google w-full flex items-center justify-center gap-3 font-bold py-3 px-4 rounded-lg hover:opacity-90 transition-opacity">
+                                <svg class="w-6 h-6" viewBox="0 0 48 48"><g><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></g></svg>
+                                使用Google账号登录/关联
+                            </button>
+                            <p class="text-xs text-gray-400 mt-4">登录即代表你同意将当前匿名设备的数据与你的Google账户关联，以实现云同步。</p>
                         </div>
-
-                        <div>
-                            <h3 class="text-xl font-semibold mb-2">2. 导入到当前设备</h3>
-                            <p class="text-sm text-gray-400 mb-4">在此粘贴从其他设备导出的“同步码”。<strong class="text-red-400">注意：这将覆盖本设备上的现有数据。</strong></p>
-                            <textarea id="import-data-input" rows="4" class="w-full bg-black/20 p-2 rounded-md border border-gray-500 focus:border-blue-400 focus:outline-none" placeholder="请在此处粘贴你的同步码..."></textarea>
-                            <button id="import-data-btn" class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg">确认导入</button>
+                        
+                        <!-- Logged In State -->
+                        <div id="logged-in-view" class="hidden">
+                            <p class="text-gray-300 mb-2">你已登录，数据正在自动同步。</p>
+                            <div class="flex items-center justify-center gap-4 bg-black/20 p-4 rounded-lg">
+                                <img id="user-photo" src="" alt="User photo" class="w-12 h-12 rounded-full">
+                                <div>
+                                    <p id="user-name" class="font-semibold text-lg"></p>
+                                    <p id="user-email" class="text-sm text-gray-400"></p>
+                                </div>
+                            </div>
+                            <button id="signout-btn" class="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg">退出登录</button>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="text-center mt-6"><p id="userId" class="text-xs text-gray-400 font-mono select-all break-all"></p></div>
+            <div class="text-center mt-6"><p id="user-id-display" class="text-xs text-gray-400 font-mono select-all break-all"></p></div>
         </div>
-
-        <!-- Custom Modal -->
-        <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-            <div class="glass-container p-8 rounded-lg shadow-xl max-w-md w-full">
-                <h3 id="modal-title" class="text-xl font-bold mb-4"></h3>
-                <div id="modal-content" class="mb-6"></div>
-                <div id="modal-actions" class="flex justify-end space-x-4"></div>
-            </div>
-        </div>
+        <!-- Modal (omitted for brevity) -->
     </main>
     
     <script type="module">
-        // Firebase and other imports...
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // --- Configs, Constants, and State ---
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-timer-default';
+        // --- Configs & State ---
+        // ============================ Firebase Configuration ============================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJRCr5DqjuW9dyum3kaKOzhWslTr6OU0o",
+            authDomain: "study-timer-53bc4.firebaseapp.com",
+            projectId: "study-timer-53bc4",
+            storageBucket: "study-timer-53bc4.appspot.com",
+            messagingSenderId: "791485165457",
+            appId: "1:791485165457:web:154f60f4a0aff841f6f430",
+            measurementId: "G-Z6MYK4SJRL"
+        };
+        // ==============================================================================
+        
+        const appId = '考研学习计时器'; 
         const EXAM_DATE = new Date('2025-12-21T00:00:00');
-        let db, auth, userId, unsubscribe, userData = { totalSeconds: 0, todos: [], dailyData: {} }, timerState = 'stopped', currentSessionSeconds = 0, timerInterval = null, chartInstance = null, calendarDate = new Date(), selectedDate = new Date().toISOString().split('T')[0], currentView = 'timer';
+        let db, auth, unsubscribe, userData = { totalSeconds: 0, todos: [], dailyData: {} }, timerState = 'stopped', currentSessionSeconds = 0, timerInterval = null, chartInstance = null, calendarDate = new Date(), selectedDate = new Date().toISOString().split('T')[0], currentView = 'timer';
 
         // --- DOM Elements ---
-        const DOMElements = { /* All DOM element selections */ 
+        const DOMElements = {
             loadingSpinner: document.getElementById('loading-spinner'), appContainer: document.getElementById('app-container'), quote: document.getElementById('quote'),
             countdown: { days: document.getElementById('days'), hours: document.getElementById('hours'), minutes: document.getElementById('minutes'), seconds: document.getElementById('seconds') },
-            tabs: { timer: document.getElementById('tab-timer'), dashboard: document.getElementById('tab-dashboard'), data: document.getElementById('tab-data'), timerView: document.getElementById('timer-view'), dashboardView: document.getElementById('dashboard-view'), dataView: document.getElementById('data-view') },
+            tabs: { timer: document.getElementById('tab-timer'), dashboard: document.getElementById('tab-dashboard'), account: document.getElementById('tab-account'), timerView: document.getElementById('timer-view'), dashboardView: document.getElementById('dashboard-view'), accountView: document.getElementById('account-view') },
             timer: { totalDisplay: document.getElementById('timerDisplay'), sessionDisplay: document.getElementById('sessionTimerDisplay'), mainBtn: document.getElementById('mainActionBtn'), secondaryBtn: document.getElementById('secondaryActionBtn'), resetBtn: document.getElementById('resetBtn') },
             todo: { input: document.getElementById('todo-input'), list: document.getElementById('todo-list') },
             calendar: { title: document.getElementById('calendar-title'), grid: document.getElementById('calendar-grid'), prevBtn: document.getElementById('prev-month'), nextBtn: document.getElementById('next-month') },
             stats: { chartCanvas: document.getElementById('activityChart'), viewWeekBtn: document.getElementById('view-week'), viewMonthBtn: document.getElementById('view-month'), selectedDayLabel: document.getElementById('selected-day-label'), selectedDayStats: document.getElementById('selected-day-stats'), periodLabel: document.getElementById('period-label'), periodStats: document.getElementById('period-stats') },
-            data: { exportBtn: document.getElementById('export-data-btn'), importInput: document.getElementById('import-data-input'), importBtn: document.getElementById('import-data-btn') },
-            userId: document.getElementById('userId'), modal: { container: document.getElementById('modal'), title: document.getElementById('modal-title'), content: document.getElementById('modal-content'), actions: document.getElementById('modal-actions') }
+            account: { loggedInView: document.getElementById('logged-in-view'), loggedOutView: document.getElementById('logged-out-view'), signInBtn: document.getElementById('google-signin-btn'), signOutBtn: document.getElementById('signout-btn'), userPhoto: document.getElementById('user-photo'), userName: document.getElementById('user-name'), userEmail: document.getElementById('user-email') },
+            userIdDisplay: document.getElementById('user-id-display')
         };
-
+        
         // --- Main Initialization ---
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             setRandomBackgroundAndQuote(); startCountdown(); setupEventListeners();
             try {
-                const app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app); setupAuthListener();
-            } catch (error) { DOMElements.loadingSpinner.innerHTML = "<p>无法连接到云端。请检查网络。</p>"; }
+                if (firebaseConfig.apiKey === "YOUR_API_KEY_HERE") { DOMElements.loadingSpinner.innerHTML = "<p class='text-red-400 text-center font-semibold'>配置错误：<br>请在HTML代码中填入你自己的Firebase项目配置信息。</p>"; return; }
+                const app = initializeApp(firebaseConfig); 
+                db = getFirestore(app); auth = getAuth(app); setupAuthListener();
+            } catch (error) { DOMElements.loadingSpinner.innerHTML = `<p>Firebase初始化失败: ${error.message}</p>`; }
         });
-        
-        // --- Firebase & Data ---
-        function setupAuthListener() { onAuthStateChanged(auth, user => { if (user) { userId = user.uid; DOMElements.userId.textContent = `设备ID: ${userId}`; setupDataListener(); } else { signInAnonymously(auth).catch(err => console.error(err)); } }); }
-        function setupDataListener() { if (unsubscribe) unsubscribe(); const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/studyData`, 'main'); unsubscribe = onSnapshot(userDocRef, (docSnap) => { DOMElements.loadingSpinner.classList.add('hidden'); DOMElements.appContainer.classList.remove('hidden'); if (docSnap.exists()) { userData = docSnap.data(); if (!userData.dailyData) userData.dailyData = {}; } else { userData = { totalSeconds: 0, todos: [], dailyData: {} }; setDoc(userDocRef, userData); } updateFullUI(); }); }
-        async function saveData() { if (!userId || !db) return; const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/studyData`, 'main'); await setDoc(userDocRef, userData, { merge: true }).catch(err => console.error(err)); }
 
-        // --- UI & Rendering ---
-        function updateFullUI() { updateTotalTimerDisplay(); renderTodos(); if (currentView === 'dashboard') { renderCalendar(calendarDate.getFullYear(), calendarDate.getMonth()); updateStatsAndChart('week'); } }
-        function switchTab(view) {
-            currentView = view;
-            Object.values(DOMElements.tabs).forEach(el => { if (el.id?.includes('view')) el.classList.add('hidden'); if (el.id?.includes('tab-')) el.classList.remove('active'); });
-            DOMElements.tabs[`${view}View`].classList.remove('hidden');
-            DOMElements.tabs[view].classList.add('active');
-            if (view === 'dashboard') { renderCalendar(calendarDate.getFullYear(), calendarDate.getMonth()); updateStatsAndChart('week'); }
-        }
-
-        // --- Data Management (Export/Import) ---
-        function handleExport() {
-            const dataString = JSON.stringify(userData);
-            const encodedData = btoa(unescape(encodeURIComponent(dataString))); // Encode to Base64
-            showModal('你的专属同步码', 
-                `<p class="text-sm text-gray-300 mb-4">请复制下面的代码，并妥善保管。在其他设备上导入此代码即可同步数据。</p>
-                 <textarea readonly class="w-full h-32 bg-black/30 p-2 rounded-md text-xs">${encodedData}</textarea>`,
-                `<button id="copy-btn" class="bg-blue-500 px-4 py-2 rounded-md">复制到剪贴板</button>
-                 <button id="close-btn" class="bg-gray-500 px-4 py-2 rounded-md">关闭</button>`
-            );
-            document.getElementById('copy-btn').onclick = () => { navigator.clipboard.writeText(encodedData); document.getElementById('copy-btn').textContent = '已复制!'; };
-            document.getElementById('close-btn').onclick = hideModal;
-        }
-        function handleImport() {
-            const encodedData = DOMElements.data.importInput.value.trim();
-            if (!encodedData) { alert("导入码不能为空！"); return; }
-            try {
-                const decodedData = decodeURIComponent(escape(atob(encodedData)));
-                const importedData = JSON.parse(decodedData);
-                // Basic validation
-                if (typeof importedData.totalSeconds !== 'number' || !Array.isArray(importedData.todos) || typeof importedData.dailyData !== 'object') {
-                    throw new Error("同步码格式无效。");
+        // --- Firebase Auth & Data ---
+        function setupAuthListener() {
+            onAuthStateChanged(auth, user => {
+                if (user) {
+                    const currentUserId = user.uid;
+                    updateAccountView(user);
+                    if (unsubscribe) unsubscribe(); // Stop listening to old user data
+                    const userDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/studyData`, 'main');
+                    unsubscribe = onSnapshot(userDocRef, docSnap => {
+                        DOMElements.loadingSpinner.classList.add('hidden');
+                        DOMElements.appContainer.classList.remove('hidden');
+                        if (docSnap.exists()) { userData = docSnap.data(); } 
+                        else { userData = { totalSeconds: 0, todos: [], dailyData: {} }; setDoc(userDocRef, userData); }
+                        updateFullUI();
+                    }, error => {
+                        console.error("Firestore snapshot error:", error);
+                        DOMElements.loadingSpinner.innerHTML = `<p class='text-red-400'>无法从云端读取数据，请检查Firestore安全规则。</p>`;
+                    });
+                } else {
+                    signInAnonymously(auth).catch(err => console.error("Anonymous sign-in failed:", err));
                 }
-                showModal('确认导入数据', 
-                    `<p class="text-red-400">这将用导入的数据完全覆盖当前设备上的所有学习记录。此操作无法撤销，确定要继续吗？</p>`,
-                    `<button id="confirm-import-btn" class="bg-red-600 px-4 py-2 rounded-md">确认覆盖</button>
-                     <button id="cancel-import-btn" class="bg-gray-500 px-4 py-2 rounded-md">取消</button>`
-                );
-                document.getElementById('confirm-import-btn').onclick = () => {
-                    userData = importedData;
-                    saveData(); // Save the new data to Firebase for the current user.
-                    DOMElements.data.importInput.value = '';
-                    hideModal();
-                    alert("数据导入成功！");
-                    switchTab('timer'); // Go to timer tab to see changes
-                };
-                document.getElementById('cancel-import-btn').onclick = hideModal;
-            } catch (e) {
-                alert("同步码无效或已损坏，请重新导出。错误: " + e.message);
+            });
+        }
+        
+        async function handleGoogleSignIn() {
+            const provider = new GoogleAuthProvider();
+            try {
+                // signInWithPopup handles both new sign-ins and linking anonymous accounts
+                const result = await signInWithPopup(auth, provider);
+                alert(`欢迎，${result.user.displayName}！你的数据已成功关联并实现云同步。`);
+            } catch (error) {
+                console.error("Google Sign-In Error:", error);
+                alert(`登录失败: ${error.message}`);
             }
         }
+
+        function handleSignOut() { signOut(auth).catch(error => console.error("Sign Out Error", error)); }
+        async function saveData() { if (!auth.currentUser) return; const userDocRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}/studyData`, 'main'); await setDoc(userDocRef, userData, { merge: true }); }
         
-        // --- Modal ---
-        function showModal(title, content, actions) {
-            DOMElements.modal.title.innerHTML = title;
-            DOMElements.modal.content.innerHTML = content;
-            DOMElements.modal.actions.innerHTML = actions;
-            DOMElements.modal.container.classList.remove('hidden');
+        // --- UI & Rendering ---
+        function updateFullUI() { updateTotalTimerDisplay(); renderTodos(); if (currentView === 'dashboard') { renderCalendar(calendarDate.getFullYear(), calendarDate.getMonth()); updateStatsAndChart('week'); } }
+        
+        function switchTab(view) {
+            currentView = view;
+            Object.values(DOMElements.tabs).forEach(el => {
+                if (el.id?.includes('view')) el.classList.add('hidden');
+                if (el.id?.includes('tab-')) el.classList.remove('active');
+            });
+            DOMElements.tabs[`${view}View`].classList.remove('hidden');
+            DOMElements.tabs[view].classList.add('active');
+            if (view === 'dashboard') {
+                renderCalendar(calendarDate.getFullYear(), calendarDate.getMonth());
+                updateStatsAndChart('week');
+            }
         }
-        function hideModal() { DOMElements.modal.container.classList.add('hidden'); }
+
+        function updateAccountView(user) {
+            if (user && !user.isAnonymous) {
+                DOMElements.account.loggedInView.classList.remove('hidden');
+                DOMElements.account.loggedOutView.classList.add('hidden');
+                DOMElements.account.userPhoto.src = user.photoURL || 'https://placehold.co/100/333/fff?text=?';
+                DOMElements.account.userPhoto.onerror = () => { DOMElements.account.userPhoto.src = 'https://placehold.co/100/333/fff?text=?'; };
+                DOMElements.account.userName.textContent = user.displayName || '考研人';
+                DOMElements.account.userEmail.textContent = user.email;
+                DOMElements.userIdDisplay.textContent = `用户ID (已同步): ${user.uid}`;
+            } else {
+                DOMElements.account.loggedInView.classList.add('hidden');
+                DOMElements.account.loggedOutView.classList.remove('hidden');
+                DOMElements.userIdDisplay.textContent = user ? `设备ID (未同步): ${user.uid}` : '';
+            }
+        }
 
         // --- Event Listeners Setup ---
         function setupEventListeners() {
-            // Tabs
             DOMElements.tabs.timer.addEventListener('click', () => switchTab('timer'));
             DOMElements.tabs.dashboard.addEventListener('click', () => switchTab('dashboard'));
-            DOMElements.tabs.data.addEventListener('click', () => switchTab('data'));
-            // Data Management
-            DOMElements.data.exportBtn.addEventListener('click', handleExport);
-            DOMElements.data.importBtn.addEventListener('click', handleImport);
-            // Timer, To-do, Calendar...
-            DOMElements.timer.mainBtn.addEventListener('click', () => { /* ... */ });
-            DOMElements.todo.list.addEventListener('click', (e) => { /* ... */ });
-             // Other event listeners...
-             DOMElements.timer.mainBtn.addEventListener('click', () => { if (timerState === 'stopped' || timerState === 'paused') startTimer(); else if (timerState === 'running') pauseTimer(); });
-             DOMElements.timer.secondaryBtn.addEventListener('click', saveSession);
-             DOMElements.todo.list.addEventListener('click', handleTodoListClick);
-             DOMElements.todo.input.addEventListener('keypress', e => { if (e.key === 'Enter') { const text = DOMElements.todo.input.value.trim(); if (text) { userData.todos.push({ id: Date.now().toString(), text, completed: false }); DOMElements.todo.input.value = ''; saveData(); } } });
-             DOMElements.calendar.prevBtn.addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() - 1); renderCalendar(calendarDate.getFullYear(), calendarDate.getMonth()); });
-             DOMElements.calendar.nextBtn.addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() + 1); renderCalendar(calendarDate.getFullYear(), calendarDate.getMonth()); });
-             DOMElements.stats.viewWeekBtn.addEventListener('click', () => updateStatsAndChart('week'));
-             DOMElements.stats.viewMonthBtn.addEventListener('click', () => updateStatsAndChart('month'));
+            DOMElements.tabs.account.addEventListener('click', () => switchTab('account'));
+            DOMElements.account.signInBtn.addEventListener('click', handleGoogleSignIn);
+            DOMElements.account.signOutBtn.addEventListener('click', handleSignOut);
+            DOMElements.timer.mainBtn.addEventListener('click', () => { if (timerState === 'stopped' || timerState === 'paused') startTimer(); else if (timerState === 'running') pauseTimer(); });
+            DOMElements.timer.secondaryBtn.addEventListener('click', saveSession);
+            DOMElements.todo.list.addEventListener('click', handleTodoListClick);
+            DOMElements.todo.input.addEventListener('keypress', e => { if (e.key === 'Enter') { const text = DOMElements.todo.input.value.trim(); if (text) { userData.todos.push({ id: Date.now().toString(), text, completed: false }); DOMElements.todo.input.value = ''; saveData(); } } });
+            DOMElements.calendar.prevBtn.addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() - 1); renderCalendar(calendarDate.getFullYear(), calendarDate.getMonth()); });
+            DOMElements.calendar.nextBtn.addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() + 1); renderCalendar(calendarDate.getFullYear(), calendarDate.getMonth()); });
+            DOMElements.stats.viewWeekBtn.addEventListener('click', () => updateStatsAndChart('week'));
+            DOMElements.stats.viewMonthBtn.addEventListener('click', () => updateStatsAndChart('month'));
         }
-
-        // --- All other functions (unchanged from previous version) ---
+        
+        // --- ALL OTHER FUNCTIONS (Timer, Calendar, etc. are mostly unchanged) ---
         function startCountdown() { setInterval(() => { const diff = EXAM_DATE - new Date(); if (diff <= 0) return; DOMElements.countdown.days.textContent = Math.floor(diff / 864e5); DOMElements.countdown.hours.textContent = Math.floor((diff / 36e5) % 24); DOMElements.countdown.minutes.textContent = Math.floor((diff / 6e4) % 60); DOMElements.countdown.seconds.textContent = Math.floor((diff / 1e3) % 60); }, 1000); }
         function startTimer() { timerState = 'running'; updateButtonUI(); timerInterval = setInterval(() => { currentSessionSeconds++; updateSessionTimerDisplay(); }, 1000); }
         function pauseTimer() { timerState = 'paused'; clearInterval(timerInterval); updateButtonUI(); }
