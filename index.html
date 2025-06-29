@@ -160,7 +160,7 @@
         // ==============================================================================
         
         const appId = '考研学习计时器'; 
-        const EXAM_DATE = new Date('2025-12-21T00:00:00');
+        const EXAM_DATE = new Date('2025-12-21T09:00:00');
         let db, auth, unsubscribe, userData = { totalSeconds: 0, todos: [], dailyData: {} }, timerState = 'stopped', currentSessionSeconds = 0, timerInterval = null, chartInstance = null, calendarDate = new Date(), selectedDate = new Date().toISOString().split('T')[0], currentView = 'timer';
 
         // --- DOM Elements ---
