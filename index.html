@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>考研学习时间记录器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            transition: background-image 1s ease-in-out;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .glass-container {
+            background-color: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .tab { transition: all 0.3s ease; }
+        .tab.active { background-color: rgba(74, 144, 226, 0.8); color: white; }
+        .tab:not(.active) { background-color: rgba(255, 255, 255, 0.2); }
+        .calendar-day { transition: all 0.2s ease-in-out; }
+        .calendar-day:not(.other-month):not(.header):hover { background-color: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
+        .calendar-day.selected { background-color: rgba(74, 144, 226, 0.6); border: 1px solid #4a90e2; }
+        .activity-level-1 { background-color: rgba(3, 112, 60, 0.4); }
+        .activity-level-2 { background-color: rgba(0, 150, 75, 0.5); }
+        .activity-level-3 { background-color: rgba(0, 191, 95, 0.7); }
+        .activity-level-4 { background-color: rgba(0, 230, 115, 0.9); }
+        textarea::placeholder { color: rgba(255, 255, 255, 0.5); }
+    </style>
+</head>
+<body class="text-white">
+    <!-- Background Overlay -->
+    <div class="absolute inset-0 bg-black bg-opacity-50 z-0"></div>
+
+    <!-- Main Content -->
+    <main class="relative z-10 flex flex-col items-center min-h-screen p-4">
+        <div id="loading-spinner" class="flex flex-col items-center justify-center h-screen">
+            <svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <p class="mt-2 text-lg">正在连接云端...</p>
+        </div>
+
+        <div id="app-container" class="hidden w-full max-w-7xl mx-auto">
+            <!-- Header -->
+            <header class="text-center mb-6">
+                 <div id="countdown-container" class="glass-container rounded-xl p-4 mb-4">
+                    <h2 class="text-lg font-medium text-gray-300">距离2026考研初试 (2025/12/21) 还有</h2>
+                    <div id="countdown-timer" class="text-2xl sm:text-4xl font-bold tracking-tight"><span id="days">0</span>天 <span id="hours">0</span>时 <span id="minutes">0</span>分 <span id="seconds">0</span>秒</div>
+                </div>
+                <p id="quote" class="text-lg italic text-gray-200"></p>
+            </header>
+            
+            <!-- Tab Navigation -->
+            <nav class="flex justify-center mb-6">
+                <div class="glass-container rounded-lg p-1 flex space-x-1">
+                    <button id="tab-timer" class="tab active px-6 py-2 rounded-md font-semibold">计时专注</button>
+                    <button id="tab-dashboard" class="tab px-6 py-2 rounded-md font-semibold">数据看板</button>
+                    <button id="tab-data" class="tab px-6 py-2 rounded-md font-semibold">数据管理</button>
+                </div>
+            </nav>
+
+            <!-- Tab Content -->
+            <div id="tab-content">
+                <!-- Timer & To-do View -->
+                <div id="timer-view">
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="glass-container p-6 rounded-2xl shadow-2xl text-center">
+                            <h1 class="text-xl font-light text-gray-300">累计学习时间</h1>
+                            <div id="timerDisplay" class="my-2 text-5xl sm:text-6xl font-bold">0.0<span class="text-2xl font-light ml-2">小时</span></div>
+                            <div id="sessionTimerDisplay" class="my-3 text-2xl font-light text-gray-200 h-8">00时00分00秒</div>
+                            <div class="flex justify-center items-center space-x-2 sm:space-x-4 mt-2">
+                                <button id="mainActionBtn" class="w-32 px-4 py-3 text-lg font-semibold bg-blue-500 hover:bg-blue-600 rounded-lg shadow-lg transition-all">开始</button>
+                                <button id="secondaryActionBtn" class="w-32 px-4 py-3 text-lg font-semibold bg-green-600 hover:bg-green-700 rounded-lg shadow-lg hidden">保存</button>
+                                <button id="resetBtn" class="w-24 px-4 py-3 text-lg font-semibold bg-red-600 hover:bg-red-700 rounded-lg shadow-lg">重置</button>
+                            </div>
+                        </div>
+                        <div class="glass-container p-6 rounded-2xl shadow-2xl">
+                            <h2 class="text-xl font-bold text-center mb-4">今日任务清单</h2>
+                            <div class="flex mb-4">
+                                <input type="text" id="todo-input" class="w-full bg-transparent border-b-2 border-gray-400 focus:border-white text-lg p-2 focus:outline-none" placeholder="输入任务，按回车添加...">
+                            </div>
+                            <ul id="todo-list" class="space-y-3 h-48 overflow-y-auto"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard View -->
+                <div id="dashboard-view" class="hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                        <div class="lg:col-span-2 glass-container p-6 rounded-2xl shadow-2xl">
+                            <div class="flex justify-between items-center mb-4">
+                                <button id="prev-month" class="px-4 py-2 bg-white/10 rounded-md hover:bg-white/20">&lt;</button>
+                                <h2 id="calendar-title" class="text-xl font-bold"></h2>
+                                <button id="next-month" class="px-4 py-2 bg-white/10 rounded-md hover:bg-white/20">&gt;</button>
+                            </div>
+                            <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center"></div>
+                        </div>
+                        <div class="lg:col-span-3 glass-container p-6 rounded-2xl shadow-2xl">
+                             <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-bold">学习时长分析</h2>
+                                 <div class="flex space-x-2">
+                                    <button id="view-week" class="px-3 py-1 text-sm bg-blue-500 rounded-md">最近7天</button>
+                                    <button id="view-month" class="px-3 py-1 text-sm bg-white/20 rounded-md">本月</button>
+                                </div>
+                            </div>
+                            <div class="relative h-64"><canvas id="activityChart"></canvas></div>
+                            <div class="grid grid-cols-2 gap-4 text-center mt-4 pt-4 border-t border-white/20">
+                                <div><h3 id="selected-day-label" class="text-gray-300">今日学习</h3><p id="selected-day-stats" class="text-2xl font-bold">0分钟</p></div>
+                                <div><h3 id="period-label" class="text-gray-300">本周学习</h3><p id="period-stats" class="text-2xl font-bold">0小时</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Management View -->
+                <div id="data-view" class="hidden">
+                    <div class="glass-container max-w-2xl mx-auto p-8 rounded-2xl shadow-2xl text-center">
+                        <h2 class="text-2xl font-bold mb-4">数据同步与管理</h2>
+                        <p class="text-gray-300 mb-6">通过导出和导入“同步码”，你可以在不同设备间迁移你的所有学习数据。</p>
+                        
+                        <div class="mb-8">
+                            <h3 class="text-xl font-semibold mb-2">1. 从当前设备导出</h3>
+                            <p class="text-sm text-gray-400 mb-4">将当前设备的所有数据生成一个“同步码”。</p>
+                            <button id="export-data-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg">导出全部数据</button>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2">2. 导入到当前设备</h3>
+                            <p class="text-sm text-gray-400 mb-4">在此粘贴从其他设备导出的“同步码”。<strong class="text-red-400">注意：这将覆盖本设备上的现有数据。</strong></p>
+                            <textarea id="import-data-input" rows="4" class="w-full bg-black/20 p-2 rounded-md border border-gray-500 focus:border-blue-400 focus:outline-none" placeholder="请在此处粘贴你的同步码..."></textarea>
+                            <button id="import-data-btn" class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg">确认导入</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-6"><p id="userId" class="text-xs text-gray-400 font-mono select-all break-all"></p></div>
+        </div>
+
+        <!-- Custom Modal -->
+        <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+            <div class="glass-container p-8 rounded-lg shadow-xl max-w-md w-full">
+                <h3 id="modal-title" class="text-xl font-bold mb-4"></h3>
+                <div id="modal-content" class="mb-6"></div>
+                <div id="modal-actions" class="flex justify-end space-x-4"></div>
+            </div>
+        </div>
+    </main>
+    
+    <script type="module">
+        // Firebase and other imports...
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- Configs, Constants, and State ---
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'study-timer-default';
+        const EXAM_DATE = new Date('2025-12-21T00:00:00');
+        let db, auth, userId, unsubscribe, userData = { totalSeconds: 0, todos: [], dailyData: {} }, timerState = 'stopped', currentSessionSeconds = 0, timerInterval = null, chartInstance = null, calendarDate = new Date(), selectedDate = new Date().toISOString().split('T')[0], currentView = 'timer';
+
+        // --- DOM Elements ---
+        const DOMElements = { /* All DOM element selections */ 
+            loadingSpinner: document.getElementById('loading-spinner'), appContainer: document.getElementById('app-container'), quote: document.getElementById('quote'),
+            countdown: { days: document.getElementById('days'), hours: document.getElementById('hours'), minutes: document.getElementById('minutes'), seconds: document.getElementById('seconds') },
+            tabs: { timer: document.getElementById('tab-timer'), dashboard: document.getElementById('tab-dashboard'), data: document.getElementById('tab-data'), timerView: document.getElementById('timer-view'), dashboardView: document.getElementById('dashboard-view'), dataView: document.getElementById('data-view') },
+            timer: { totalDisplay: document.getElementById('timerDisplay'), sessionDisplay: document.getElementById('sessionTimerDisplay'), mainBtn: document.getElementById('mainActionBtn'), secondaryBtn: document.getElementById('secondaryActionBtn'), resetBtn: document.getElementById('resetBtn') },
+            todo: { input: document.getElementById('todo-input'), list: document.getElementById('todo-list') },
+            calendar: { title: document.getElementById('calendar-title'), grid: document.getElementById('calendar-grid'), prevBtn: document.getElementById('prev-month'), nextBtn: document.getElementById('next-month') },
+            stats: { chartCanvas: document.getElementById('activityChart'), viewWeekBtn: document.getElementById('view-week'), viewMonthBtn: document.getElementById('view-month'), selectedDayLabel: document.getElementById('selected-day-label'), selectedDayStats: document.getElementById('selected-day-stats'), periodLabel: document.getElementById('period-label'), periodStats: document.getElementById('period-stats') },
+            data: { exportBtn: document.getElementById('export-data-btn'), importInput: document.getElementById('import-data-input'), importBtn: document.getElementById('import-data-btn') },
+            userId: document.getElementById('userId'), modal: { container: document.getElementById('modal'), title: document.getElementById('modal-title'), content: document.getElementById('modal-content'), actions: document.getElementById('modal-actions') }
+        };
+
+        // --- Main Initialization ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            setRandomBackgroundAndQuote(); startCountdown(); setupEventListeners();
+            try {
+                const app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app); setupAuthListener();
+            } catch (error) { DOMElements.loadingSpinner.innerHTML = "<p>无法连接到云端。请检查网络。</p>"; }
+        });
+        
+        // --- Firebase & Data ---
+        function setupAuthListener() { onAuthStateChanged(auth, user => { if (user) { userId = user.uid; DOMElements.userId.textContent = `设备ID: ${userId}`; setupDataListener(); } else { signInAnonymously(auth).catch(err => console.error(err)); } }); }
+        function setupDataListener() { if (unsubscribe) unsubscribe(); const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/studyData`, 'main'); unsubscribe = onSnapshot(userDocRef, (docSnap) => { DOMElements.loadingSpinner.classList.add('hidden'); DOMElements.appContainer.classList.remove('hidden'); if (docSnap.exists()) { userData = docSnap.data(); if (!userData.dailyData) userData.dailyData = {}; } else { userData = { totalSeconds: 0, todos: [], dailyData: {} }; setDoc(userDocRef, userData); } updateFullUI(); }); }
+        async function saveData() { if (!userId || !db) return; const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/studyData`, 'main'); await setDoc(userDocRef, userData, { merge: true }).catch(err => console.error(err)); }
+
+        // --- UI & Rendering ---
+        function updateFullUI() { updateTotalTimerDisplay(); renderTodos(); if (currentView === 'dashboard') { renderCalendar(calendarDate.getFullYear(), calendarDate.getMonth()); updateStatsAndChart('week'); } }
+        function switchTab(view) {
+            currentView = view;
+            Object.values(DOMElements.tabs).forEach(el => { if (el.id?.includes('view')) el.classList.add('hidden'); if (el.id?.includes('tab-')) el.classList.remove('active'); });
+            DOMElements.tabs[`${view}View`].classList.remove('hidden');
+            DOMElements.tabs[view].classList.add('active');
+            if (view === 'dashboard') { renderCalendar(calendarDate.getFullYear(), calendarDate.getMonth()); updateStatsAndChart('week'); }
+        }
+
+        // --- Data Management (Export/Import) ---
+        function handleExport() {
+            const dataString = JSON.stringify(userData);
+            const encodedData = btoa(unescape(encodeURIComponent(dataString))); // Encode to Base64
+            showModal('你的专属同步码', 
+                `<p class="text-sm text-gray-300 mb-4">请复制下面的代码，并妥善保管。在其他设备上导入此代码即可同步数据。</p>
+                 <textarea readonly class="w-full h-32 bg-black/30 p-2 rounded-md text-xs">${encodedData}</textarea>`,
+                `<button id="copy-btn" class="bg-blue-500 px-4 py-2 rounded-md">复制到剪贴板</button>
+                 <button id="close-btn" class="bg-gray-500 px-4 py-2 rounded-md">关闭</button>`
+            );
+            document.getElementById('copy-btn').onclick = () => { navigator.clipboard.writeText(encodedData); document.getElementById('copy-btn').textContent = '已复制!'; };
+            document.getElementById('close-btn').onclick = hideModal;
+        }
+        function handleImport() {
+            const encodedData = DOMElements.data.importInput.value.trim();
+            if (!encodedData) { alert("导入码不能为空！"); return; }
+            try {
+                const decodedData = decodeURIComponent(escape(atob(encodedData)));
+                const importedData = JSON.parse(decodedData);
+                // Basic validation
+                if (typeof importedData.totalSeconds !== 'number' || !Array.isArray(importedData.todos) || typeof importedData.dailyData !== 'object') {
+                    throw new Error("同步码格式无效。");
+                }
+                showModal('确认导入数据', 
+                    `<p class="text-red-400">这将用导入的数据完全覆盖当前设备上的所有学习记录。此操作无法撤销，确定要继续吗？</p>`,
+                    `<button id="confirm-import-btn" class="bg-red-600 px-4 py-2 rounded-md">确认覆盖</button>
+                     <button id="cancel-import-btn" class="bg-gray-500 px-4 py-2 rounded-md">取消</button>`
+                );
+                document.getElementById('confirm-import-btn').onclick = () => {
+                    userData = importedData;
+                    saveData(); // Save the new data to Firebase for the current user.
+                    DOMElements.data.importInput.value = '';
+                    hideModal();
+                    alert("数据导入成功！");
+                    switchTab('timer'); // Go to timer tab to see changes
+                };
+                document.getElementById('cancel-import-btn').onclick = hideModal;
+            } catch (e) {
+                alert("同步码无效或已损坏，请重新导出。错误: " + e.message);
+            }
+        }
+        
+        // --- Modal ---
+        function showModal(title, content, actions) {
+            DOMElements.modal.title.innerHTML = title;
+            DOMElements.modal.content.innerHTML = content;
+            DOMElements.modal.actions.innerHTML = actions;
+            DOMElements.modal.container.classList.remove('hidden');
+        }
+        function hideModal() { DOMElements.modal.container.classList.add('hidden'); }
+
+        // --- Event Listeners Setup ---
+        function setupEventListeners() {
+            // Tabs
+            DOMElements.tabs.timer.addEventListener('click', () => switchTab('timer'));
+            DOMElements.tabs.dashboard.addEventListener('click', () => switchTab('dashboard'));
+            DOMElements.tabs.data.addEventListener('click', () => switchTab('data'));
+            // Data Management
+            DOMElements.data.exportBtn.addEventListener('click', handleExport);
+            DOMElements.data.importBtn.addEventListener('click', handleImport);
+            // Timer, To-do, Calendar...
+            DOMElements.timer.mainBtn.addEventListener('click', () => { /* ... */ });
+            DOMElements.todo.list.addEventListener('click', (e) => { /* ... */ });
+             // Other event listeners...
+             DOMElements.timer.mainBtn.addEventListener('click', () => { if (timerState === 'stopped' || timerState === 'paused') startTimer(); else if (timerState === 'running') pauseTimer(); });
+             DOMElements.timer.secondaryBtn.addEventListener('click', saveSession);
+             DOMElements.todo.list.addEventListener('click', handleTodoListClick);
+             DOMElements.todo.input.addEventListener('keypress', e => { if (e.key === 'Enter') { const text = DOMElements.todo.input.value.trim(); if (text) { userData.todos.push({ id: Date.now().toString(), text, completed: false }); DOMElements.todo.input.value = ''; saveData(); } } });
+             DOMElements.calendar.prevBtn.addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() - 1); renderCalendar(calendarDate.getFullYear(), calendarDate.getMonth()); });
+             DOMElements.calendar.nextBtn.addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() + 1); renderCalendar(calendarDate.getFullYear(), calendarDate.getMonth()); });
+             DOMElements.stats.viewWeekBtn.addEventListener('click', () => updateStatsAndChart('week'));
+             DOMElements.stats.viewMonthBtn.addEventListener('click', () => updateStatsAndChart('month'));
+        }
+
+        // --- All other functions (unchanged from previous version) ---
+        function startCountdown() { setInterval(() => { const diff = EXAM_DATE - new Date(); if (diff <= 0) return; DOMElements.countdown.days.textContent = Math.floor(diff / 864e5); DOMElements.countdown.hours.textContent = Math.floor((diff / 36e5) % 24); DOMElements.countdown.minutes.textContent = Math.floor((diff / 6e4) % 60); DOMElements.countdown.seconds.textContent = Math.floor((diff / 1e3) % 60); }, 1000); }
+        function startTimer() { timerState = 'running'; updateButtonUI(); timerInterval = setInterval(() => { currentSessionSeconds++; updateSessionTimerDisplay(); }, 1000); }
+        function pauseTimer() { timerState = 'paused'; clearInterval(timerInterval); updateButtonUI(); }
+        function saveSession() { const todayStr = new Date().toISOString().split('T')[0]; userData.totalSeconds += currentSessionSeconds; const dayData = userData.dailyData[todayStr] || { seconds: 0 }; dayData.seconds += currentSessionSeconds; userData.dailyData[todayStr] = dayData; currentSessionSeconds = 0; saveData(); timerState = 'stopped'; updateButtonUI(); updateSessionTimerDisplay(); }
+        function renderTodos() { const list = DOMElements.todo.list; list.innerHTML = ''; const sorted = [...(userData.todos || [])].sort((a,b)=>a.completed-b.completed); if(sorted.length===0){list.innerHTML=`<li class="text-center text-gray-400 italic py-2">今日事今日毕。</li>`;return} sorted.forEach(t=>{const li=document.createElement('li');li.className=`flex items-center justify-between bg-white/10 p-3 rounded-lg cursor-pointer ${t.completed?'opacity-50 line-through':''}`;li.dataset.id=t.id;li.innerHTML=`<span>${t.text}</span><button data-action="delete" class="text-red-400 font-bold px-2 hover:text-red-200 text-2xl">&times;</button>`;list.appendChild(li)})}
+        function handleTodoListClick(e) { const li = e.target.closest('li'); if (!li) return; const todoId = li.dataset.id; const todo = userData.todos.find(t => t.id === todoId); if (!todo) return; if (e.target.dataset.action === 'delete') { userData.todos = userData.todos.filter(t => t.id !== todoId); } else { todo.completed = !todo.completed; } saveData(); }
+        function renderCalendar(year, month) { DOMElements.calendar.title.textContent = `${year}年 ${month+1}月`; const grid = DOMElements.calendar.grid; grid.innerHTML = ''; ['日','一','二','三','四','五','六'].forEach(d=>{const el=document.createElement('div');el.className='font-bold text-sm';el.textContent=d;grid.appendChild(el)}); const first=new Date(year,month,1).getDay(); const days=new Date(year,month+1,0).getDate(); for(let i=0;i<first;i++){grid.appendChild(document.createElement('div'))} for(let i=1;i<=days;i++){const el=document.createElement('div');const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;el.textContent=i;el.className='calendar-day p-2 cursor-pointer rounded-md';el.dataset.date=dateStr;if(dateStr===selectedDate){el.classList.add('selected')}const dayData=userData.dailyData[dateStr];if(dayData?.seconds>0){const h=dayData.seconds/3600;if(h>=4)el.classList.add('activity-level-4');else if(h>=2)el.classList.add('activity-level-3');else if(h>=1)el.classList.add('activity-level-2');else el.classList.add('activity-level-1')}el.onclick=()=>{selectedDate=dateStr;renderCalendar(year,month);updateStatsAndChart(document.querySelector('#view-week.bg-blue-500')?'week':'month')};grid.appendChild(el)} }
+        function updateStatsAndChart(period) { DOMElements.stats.viewWeekBtn.classList.toggle('bg-blue-500', period === 'week');DOMElements.stats.viewWeekBtn.classList.toggle('bg-white/20', period !== 'week');DOMElements.stats.viewMonthBtn.classList.toggle('bg-blue-500', period === 'month');DOMElements.stats.viewMonthBtn.classList.toggle('bg-white/20', period !== 'month');const selData=userData.dailyData[selectedDate];DOMElements.stats.selectedDayLabel.textContent=`学习于 ${selectedDate.slice(5)}`;DOMElements.stats.selectedDayStats.textContent=`${selData?Math.floor(selData.seconds/60):0} 分钟`;const{labels,data,total}=prepareChartData(period);renderChart(labels,data);DOMElements.stats.periodLabel.textContent=period==='week'?'本周学习':'本月学习';DOMElements.stats.periodStats.textContent=`${(total/3600).toFixed(1)} 小时`}
+        function prepareChartData(period) { let labels=[],data=[],total=0,end=new Date(selectedDate);if(period==='week'){for(let i=6;i>=0;i--){const d=new Date(end);d.setDate(d.getDate()-i);const s=d.toISOString().split('T')[0];labels.push(s.slice(5));const sec=userData.dailyData[s]?.seconds||0;data.push(sec/3600);total+=sec}}else{const y=end.getFullYear(),m=end.getMonth(),days=new Date(y,m+1,0).getDate();for(let i=1;i<=days;i++){const s=`${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;labels.push(String(i));const sec=userData.dailyData[s]?.seconds||0;data.push(sec/3600);total+=sec}}return{labels,data,total}}
+        function renderChart(labels, data) { if (chartInstance) chartInstance.destroy(); const ctx = DOMElements.stats.chartCanvas.getContext('2d'); chartInstance = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: '学习小时数', data, backgroundColor: 'rgba(74, 144, 226, 0.6)', borderColor: 'rgba(74, 144, 226, 1)', borderWidth: 1, borderRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { color: '#ddd' }, grid: { color: 'rgba(255,255,255,0.1)' } }, x: { ticks: { color: '#ddd' }, grid: { color: 'rgba(255,255,255,0.1)' } } }, plugins: { legend: { display: false } } } }); }
+        function setRandomBackgroundAndQuote() { const quotes = ["彼方尚有荣光在。", "乾坤未定，你我皆是黑马。"]; const images = ['https://images.unsplash.com/photo-1487147264018-f937fba0c817?q=80&w=2400', 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2400']; DOMElements.quote.textContent = `“${quotes[Math.floor(Math.random()*quotes.length)]}”`; document.body.style.backgroundImage = `url('${images[Math.floor(Math.random()*images.length)]}')`; }
+        function updateTotalTimerDisplay() { const h = (userData.totalSeconds || 0) / 3600; DOMElements.timer.totalDisplay.innerHTML = `${h.toFixed(1)}<span class="text-2xl font-light ml-2">小时</span>`; }
+        function updateSessionTimerDisplay() { const h=Math.floor(currentSessionSeconds/3600),m=Math.floor((currentSessionSeconds%3600)/60),s=currentSessionSeconds%60; DOMElements.timer.sessionDisplay.textContent = `${String(h).padStart(2,'0')}时${String(m).padStart(2,'0')}分${String(s).padStart(2,'0')}秒`; }
+        function updateButtonUI() { const {mainBtn,secondaryBtn}=DOMElements.timer;if(timerState==='running'){mainBtn.textContent='暂停';mainBtn.className=mainBtn.className.replace('blue','yellow');secondaryBtn.classList.add('hidden')}else if(timerState==='paused'){mainBtn.textContent='继续';mainBtn.className=mainBtn.className.replace('yellow','blue');secondaryBtn.classList.remove('hidden')}else{mainBtn.textContent='开始';mainBtn.className=mainBtn.className.replace('yellow','blue');secondaryBtn.classList.add('hidden')} }
+    </script>
+</body>
+</html>
